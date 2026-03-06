@@ -124,7 +124,7 @@ export const transactionSchema = baseSchema.extend({
   customerEmail: z.string().email(),
   customerIp: z.string().nullable(),
   signature: z.string().min(1),
-  providerResponse: z.record(z.unknown()).nullable(),
+  providerResponse: z.record(z.string(), z.unknown()).nullable(),
 });
 
 // Used for HTTP request body validation when creating a transaction

@@ -38,9 +38,7 @@ export const envValidationSchema = Joi.object({
   DB_DOMAIN_SERVICE_API_KEY: Joi.string().required(),
 
   // Payment Provider
-  PAYMENT_PROVIDER_ENVIRONMENT: Joi.string()
-    .valid('sandbox', 'production')
-    .default('sandbox'),
+  PAYMENT_PROVIDER_ENVIRONMENT: Joi.string().valid('sandbox', 'production').default('sandbox'),
   PAYMENT_PROVIDER_SANDBOX_URL: Joi.string().default('https://sandbox.wompi.co/v1'),
   PAYMENT_PROVIDER_PRODUCTION_URL: Joi.string().default('https://production.wompi.co/v1'),
   PAYMENT_PROVIDER_PUBLIC_KEY: Joi.string().required(),

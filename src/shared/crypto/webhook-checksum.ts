@@ -9,10 +9,7 @@ export const validateWebhookChecksum = (
   const raw = [...propertyValues, String(timestamp), eventsKey].join('');
   const computed = createHash('sha256').update(raw).digest('hex');
   try {
-    return timingSafeEqual(
-      Buffer.from(computed, 'utf8'),
-      Buffer.from(receivedChecksum, 'utf8'),
-    );
+    return timingSafeEqual(Buffer.from(computed, 'utf8'), Buffer.from(receivedChecksum, 'utf8'));
   } catch {
     return false;
   }

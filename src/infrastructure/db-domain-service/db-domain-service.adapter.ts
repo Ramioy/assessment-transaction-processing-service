@@ -56,9 +56,7 @@ export class DbDomainServiceAdapter implements TransactionRepository {
   }
 
   /** Like request() but returns null on 404 instead of an error. */
-  private async requestOptional(
-    path: string,
-  ): Promise<Result<unknown | null, InfrastructureError>> {
+  private async requestOptional(path: string): Promise<Result<unknown, InfrastructureError>> {
     const fetchResult = await fromPromise(
       fetch(`${this.config.baseUrl}${path}`, { headers: this.headers }),
       this.wrapError('DB_DOMAIN_SERVICE_REQUEST_FAILED'),
@@ -112,9 +110,7 @@ export class DbDomainServiceAdapter implements TransactionRepository {
   }
 
   async findById(id: string): Promise<Result<Transaction | null, InfrastructureError>> {
-    const result = await this.requestOptional(
-      `/payment-transactions/${encodeURIComponent(id)}`,
-    );
+    const result = await this.requestOptional(`/payment-transactions/${encodeURIComponent(id)}`);
     if (!result.ok) return result;
     if (result.value === null) return ok(null);
     return this.toTransaction(result.value);

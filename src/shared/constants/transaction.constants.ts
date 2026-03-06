@@ -11,7 +11,7 @@ export const VALID_PAYMENT_METHODS = [
   'DAVIPLATA',
 ] as const;
 
-export const DEFAULT_CURRENCY = 'COP' as const;
+export const DEFAULT_CURRENCY = 'COP';
 
 export type TransactionStatus = (typeof VALID_STATUSES)[number];
 export type PaymentMethod = (typeof VALID_PAYMENT_METHODS)[number];

@@ -10,10 +10,7 @@ export class PaymentProviderConfig {
   readonly integrityKey: string;
 
   constructor(configService: ConfigService) {
-    const environment = configService.get<string>(
-      'PAYMENT_PROVIDER_ENVIRONMENT',
-      'sandbox',
-    );
+    const environment = configService.get<string>('PAYMENT_PROVIDER_ENVIRONMENT', 'sandbox');
 
     this.baseUrl =
       environment === 'production'

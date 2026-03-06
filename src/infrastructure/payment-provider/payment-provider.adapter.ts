@@ -160,12 +160,9 @@ export class PaymentProviderAdapter implements PaymentProviderPort {
     const result = await this.request('GET', '/v1/pse/financial_institutions');
     if (!result.ok) return result;
 
-    return fromThrowable(
-      () => {
-        const data = (result.value as { data: Array<Record<string, unknown>> }).data;
-        return data.map((item) => ProviderTransactionMapper.toPseInstitution(item));
-      },
-      this.wrapError('PAYMENT_PROVIDER_RESPONSE_PARSE_FAILED'),
-    );
+    return fromThrowable(() => {
+      const data = (result.value as { data: Array<Record<string, unknown>> }).data;
+      return data.map((item) => ProviderTransactionMapper.toPseInstitution(item));
+    }, this.wrapError('PAYMENT_PROVIDER_RESPONSE_PARSE_FAILED'));
   }
 }

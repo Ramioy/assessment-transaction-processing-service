@@ -11,7 +11,7 @@ import {
 } from '@application/transaction/use-cases/handle-webhook-event.use-case';
 
 const webhookBodySchema = z.object({
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
   signature: z.object({
     properties: z.array(z.string()),
   }),
@@ -21,10 +21,7 @@ const webhookBodySchema = z.object({
 type WebhookBody = z.infer<typeof webhookBodySchema>;
 
 /** Resolves dot-notation property paths against the data object. */
-function extractPropertyValues(
-  data: Record<string, unknown>,
-  properties: string[],
-): string[] {
+function extractPropertyValues(data: Record<string, unknown>, properties: string[]): string[] {
   return properties.map((prop) => {
     const parts = prop.split('.');
     let current: unknown = data;

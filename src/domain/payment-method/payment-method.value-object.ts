@@ -53,6 +53,8 @@ export const paymentMethodSchema = z.discriminatedUnion('type', [
 export type CardPaymentMethod = z.infer<typeof cardPaymentMethodSchema>;
 export type NequiPaymentMethod = z.infer<typeof nequiPaymentMethodSchema>;
 export type PsePaymentMethod = z.infer<typeof psePaymentMethodSchema>;
-export type BancolombiaTransferPaymentMethod = z.infer<typeof bancolombiaTransferPaymentMethodSchema>;
+export type BancolombiaTransferPaymentMethod = z.infer<
+  typeof bancolombiaTransferPaymentMethodSchema
+>;
 export type BancolombiaQrPaymentMethod = z.infer<typeof bancolombiaQrPaymentMethodSchema>;
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>;

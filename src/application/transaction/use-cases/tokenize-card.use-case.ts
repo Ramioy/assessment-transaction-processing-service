@@ -16,7 +16,9 @@ export class TokenizeCardUseCase {
     private readonly provider: PaymentProviderPort,
   ) {}
 
-  async execute(dto: CardTokenizationDto): Promise<Result<TokenResponseDto, TokenizationFailedError>> {
+  async execute(
+    dto: CardTokenizationDto,
+  ): Promise<Result<TokenResponseDto, TokenizationFailedError>> {
     return mapErr(
       await this.provider.tokenizeCard(dto),
       (e) => new TokenizationFailedError(e.reason),

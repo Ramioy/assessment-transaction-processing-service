@@ -29,12 +29,9 @@ export function unwrapResult<T>(result: Result<T, unknown>): T {
   if (error instanceof InvalidPaymentMethodError)
     throw new UnprocessableEntityException(error.message);
   if (error instanceof TokenizationFailedError) throw new BadGatewayException(error.message);
-  if (error instanceof TransactionCreationFailedError)
-    throw new BadGatewayException(error.message);
-  if (error instanceof WebhookValidationFailedError)
-    throw new UnauthorizedException(error.message);
-  if (error instanceof InfrastructureError)
-    throw new InternalServerErrorException(error.message);
+  if (error instanceof TransactionCreationFailedError) throw new BadGatewayException(error.message);
+  if (error instanceof WebhookValidationFailedError) throw new UnauthorizedException(error.message);
+  if (error instanceof InfrastructureError) throw new InternalServerErrorException(error.message);
 
   throw new InternalServerErrorException('Unexpected error');
 }

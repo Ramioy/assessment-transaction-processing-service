@@ -6,9 +6,7 @@ export interface TransactionRepository {
   save(tx: Transaction): Promise<Result<Transaction, InfrastructureError>>;
   findById(id: string): Promise<Result<Transaction | null, InfrastructureError>>;
   findByReference(reference: string): Promise<Result<Transaction | null, InfrastructureError>>;
-  findByProviderId(
-    providerId: string,
-  ): Promise<Result<Transaction | null, InfrastructureError>>;
+  findByProviderId(providerId: string): Promise<Result<Transaction | null, InfrastructureError>>;
   updateStatus(
     id: string,
     providerId: string | null,
