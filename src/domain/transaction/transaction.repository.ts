@@ -11,6 +11,7 @@ export interface TransactionRepository {
   ): Promise<Result<Transaction | null, InfrastructureError>>;
   updateStatus(
     id: string,
+    providerId: string | null,
     status: string,
     statusMessage: string | null,
     providerResponse: Record<string, unknown> | null,
