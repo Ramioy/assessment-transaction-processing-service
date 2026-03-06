@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 
 import { envValidationSchema } from '@infrastructure/config/env-validation';
 import { ApiKeyGuard } from '@shared/guards/api-key.guard';
+import { HealthModule } from './modules/health.module';
 import { TransactionModule } from './modules/transaction.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { TransactionModule } from './modules/transaction.module';
         abortEarly: true,
       },
     }),
+    HealthModule,
     TransactionModule,
   ],
   providers: [

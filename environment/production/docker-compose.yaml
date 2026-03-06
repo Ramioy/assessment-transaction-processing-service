@@ -1,4 +1,3 @@
-name: txn-processing-prod
 services:
   app:
     build:
@@ -21,7 +20,7 @@ services:
       retries: 3
       start_period: 15s
     networks:
-      - txn-processing-production
+      - assessment-production
     deploy:
       resources:
         limits:
@@ -29,5 +28,5 @@ services:
           cpus: "0.5"
 
 networks:
-  txn-processing-production:
-    name: txn-processing-production
+  assessment-production:
+    name: assessment-production

@@ -38,7 +38,8 @@ Unlike the DB Domain Service, this service **does not own a database**. All pers
 │         (HTTP Controllers, Pipes, Guards, Filters)          │
 │  - TransactionController     - TokenizationController       │
 │  - MerchantController        - PseController                │
-│  - WebhookController         - ZodValidationPipe            │
+│  - WebhookController         - HealthController             │
+│  - ZodValidationPipe                                        │
 └──────────────────────┬──────────────────────────────────────┘
                        │ (depends on)
 ┌──────────────────────▼──────────────────────────────────────┐
@@ -264,6 +265,9 @@ export class DbDomainServiceModule {}
 
 ```
 src/presentation/
+├── health/
+│   └── health.controller.ts           # GET /health (public)
+│
 ├── transaction/
 │   └── transaction.controller.ts      # POST /transactions, GET /transactions/:id
 │
@@ -274,10 +278,10 @@ src/presentation/
 │   └── merchant.controller.ts         # GET /merchant/config
 │
 ├── pse/
-│   └── pse.controller.ts             # GET /pse/financial-institutions
+│   └── pse.controller.ts             # GET /pse/financial-institutions (public)
 │
 ├── webhook/
-│   └── webhook.controller.ts          # POST /webhooks/payment-provider
+│   └── webhook.controller.ts          # POST /webhooks/payment-provider (public)
 │
 ├── helpers/
 │   └── result-to-response.helper.ts   # unwrapResult: Result<T,E> -> HTTP response/exception
