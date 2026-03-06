@@ -1,0 +1,407 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "assessment-transaction-processing-service",
+    "description": "Payment transaction processing microservice — Hexagonal Architecture with NestJS + Fastify. Delegates persistence over HTTP to assessment-db-domain-service.",
+    "version": "1.0.0",
+    "license": { "name": "GPL-3.0-only" }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3002/api/development/v1",
+      "description": "Local development"
+    },
+    {
+      "url": "http://localhost:3002/api/production/v1",
+      "description": "Local production"
+    }
+  ],
+  "security": [{ "ApiKeyAuth": [] }],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "schemas": {
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "providerId": { "type": "string", "nullable": true },
+          "reference": { "type": "string", "example": "order-unique-ref-001" },
+          "amountInCents": { "type": "integer", "example": 50000 },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3, "example": "COP" },
+          "status": { "type": "string", "example": "PENDING", "enum": ["PENDING", "APPROVED", "DECLINED", "VOIDED", "ERROR"] },
+          "statusMessage": { "type": "string", "nullable": true },
+          "paymentMethod": { "type": "string", "example": "CARD", "enum": ["CARD", "NEQUI", "PSE", "BANCOLOMBIA_TRANSFER", "BANCOLOMBIA_QR"] },
+          "customerEmail": { "type": "string", "format": "email", "example": "customer@example.com" },
+          "customerIp": { "type": "string", "nullable": true, "example": "192.168.1.1" },
+          "signature": { "type": "string", "example": "a1b2c3d4e5f6..." },
+          "providerResponse": { "type": "object", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "reference", "amountInCents", "currency", "status", "paymentMethod", "customerEmail", "signature", "createdAt", "updatedAt"]
+      },
+      "CreateTransactionRequest": {
+        "type": "object",
+        "required": ["reference", "amountInCents", "currency", "paymentMethod", "paymentMethodDetails", "customerEmail"],
+        "properties": {
+          "reference": { "type": "string", "maxLength": 255, "example": "order-unique-ref-001" },
+          "amountInCents": { "type": "integer", "minimum": 1, "example": 50000 },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3, "example": "COP" },
+          "paymentMethod": { "type": "string", "enum": ["CARD", "NEQUI", "PSE", "BANCOLOMBIA_TRANSFER", "BANCOLOMBIA_QR"], "example": "CARD" },
+          "paymentMethodDetails": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/CardPaymentMethod" },
+              { "$ref": "#/components/schemas/NequiPaymentMethod" },
+              { "$ref": "#/components/schemas/PsePaymentMethod" },
+              { "$ref": "#/components/schemas/BancolombiaTransferPaymentMethod" },
+              { "$ref": "#/components/schemas/BancolombiaQrPaymentMethod" }
+            ],
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "CARD": "#/components/schemas/CardPaymentMethod",
+                "NEQUI": "#/components/schemas/NequiPaymentMethod",
+                "PSE": "#/components/schemas/PsePaymentMethod",
+                "BANCOLOMBIA_TRANSFER": "#/components/schemas/BancolombiaTransferPaymentMethod",
+                "BANCOLOMBIA_QR": "#/components/schemas/BancolombiaQrPaymentMethod"
+              }
+            }
+          },
+          "customerEmail": { "type": "string", "format": "email", "example": "customer@example.com" },
+          "customerIp": { "type": "string", "maxLength": 45, "nullable": true, "example": "192.168.1.1" }
+        }
+      },
+      "CardPaymentMethod": {
+        "type": "object",
+        "required": ["type", "token"],
+        "properties": {
+          "type": { "type": "string", "enum": ["CARD"] },
+          "token": { "type": "string", "minLength": 1, "example": "tok_stagtest_..." },
+          "installments": { "type": "integer", "minimum": 1, "default": 1, "example": 1 }
+        }
+      },
+      "NequiPaymentMethod": {
+        "type": "object",
+        "required": ["type", "phoneNumber"],
+        "properties": {
+          "type": { "type": "string", "enum": ["NEQUI"] },
+          "phoneNumber": { "type": "string", "minLength": 10, "maxLength": 10, "example": "3001234567" }
+        }
+      },
+      "PsePaymentMethod": {
+        "type": "object",
+        "required": ["type", "userType", "userLegalIdType", "userLegalId", "financialInstitutionCode", "paymentDescription"],
+        "properties": {
+          "type": { "type": "string", "enum": ["PSE"] },
+          "userType": { "type": "integer", "minimum": 0, "maximum": 1, "description": "0 = natural person, 1 = legal person" },
+          "userLegalIdType": { "type": "string", "minLength": 1, "example": "CC" },
+          "userLegalId": { "type": "string", "minLength": 1, "example": "1234567890" },
+          "financialInstitutionCode": { "type": "string", "minLength": 1, "example": "1007" },
+          "paymentDescription": { "type": "string", "minLength": 1, "example": "Payment for order 001" }
+        }
+      },
+      "BancolombiaTransferPaymentMethod": {
+        "type": "object",
+        "required": ["type", "userType", "paymentDescription"],
+        "properties": {
+          "type": { "type": "string", "enum": ["BANCOLOMBIA_TRANSFER"] },
+          "userType": { "type": "integer", "minimum": 0, "maximum": 1 },
+          "paymentDescription": { "type": "string", "minLength": 1 }
+        }
+      },
+      "BancolombiaQrPaymentMethod": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": { "type": "string", "enum": ["BANCOLOMBIA_QR"] }
+        }
+      },
+      "TokenizeCardRequest": {
+        "type": "object",
+        "required": ["number", "expMonth", "expYear", "cvc", "cardHolder"],
+        "properties": {
+          "number": { "type": "string", "minLength": 13, "maxLength": 19, "example": "4242424242424242" },
+          "expMonth": { "type": "string", "minLength": 2, "maxLength": 2, "example": "12" },
+          "expYear": { "type": "string", "minLength": 2, "maxLength": 4, "example": "2028" },
+          "cvc": { "type": "string", "minLength": 3, "maxLength": 4, "example": "123" },
+          "cardHolder": { "type": "string", "minLength": 1, "example": "JOHN DOE" }
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "properties": {
+          "tokenId": { "type": "string", "example": "tok_stagtest_..." },
+          "brand": { "type": "string", "example": "VISA" },
+          "lastFour": { "type": "string", "example": "4242" },
+          "expiresAt": { "type": "string", "example": "2028-12-31T23:59:59.000Z" }
+        },
+        "required": ["tokenId", "brand", "lastFour", "expiresAt"]
+      },
+      "MerchantConfig": {
+        "type": "object",
+        "properties": {
+          "acceptanceToken": { "type": "string" },
+          "presignedAcceptance": {
+            "type": "object",
+            "properties": {
+              "acceptanceToken": { "type": "string" },
+              "permalink": { "type": "string" },
+              "type": { "type": "string" }
+            },
+            "required": ["acceptanceToken", "permalink", "type"]
+          },
+          "paymentMethods": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["CARD", "NEQUI", "PSE", "BANCOLOMBIA_TRANSFER"]
+          }
+        },
+        "required": ["acceptanceToken", "presignedAcceptance", "paymentMethods"]
+      },
+      "PseInstitution": {
+        "type": "object",
+        "properties": {
+          "financialInstitutionCode": { "type": "string", "example": "1007" },
+          "name": { "type": "string", "example": "Bancolombia" }
+        },
+        "required": ["financialInstitutionCode", "name"]
+      },
+      "WebhookPayload": {
+        "type": "object",
+        "required": ["data", "signature", "timestamp"],
+        "properties": {
+          "data": { "type": "object", "additionalProperties": true },
+          "signature": {
+            "type": "object",
+            "required": ["properties"],
+            "properties": {
+              "properties": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Dot-notation property paths to extract from data for checksum"
+              }
+            }
+          },
+          "timestamp": { "type": "integer", "description": "Unix timestamp from the provider" }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["ok"] },
+          "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["status", "timestamp"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "integer" },
+          "message": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "path": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "description": "Returns service health status. Public — no API key required.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Health status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthResponse" },
+                "example": { "status": "ok", "timestamp": "2026-03-06T00:00:00.000Z" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions": {
+      "post": {
+        "tags": ["Transactions"],
+        "summary": "Create a new payment transaction",
+        "description": "Validates input, computes integrity signature, persists to DB Domain Service, and submits to the payment provider.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTransactionRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Transaction created successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Transaction" } } }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "409": {
+            "description": "Duplicate reference",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "422": {
+            "description": "Invalid amount or payment method",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "502": {
+            "description": "Payment provider error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/transactions/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" },
+          "description": "Transaction UUID"
+        }
+      ],
+      "get": {
+        "tags": ["Transactions"],
+        "summary": "Get transaction status (refreshes from provider)",
+        "description": "Fetches the transaction from the DB Domain Service, queries the payment provider for the latest status, and updates if changed.",
+        "responses": {
+          "200": {
+            "description": "Transaction found (with refreshed status)",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Transaction" } } }
+          },
+          "404": {
+            "description": "Transaction not found",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/tokenization/cards": {
+      "post": {
+        "tags": ["Tokenization"],
+        "summary": "Tokenize a credit/debit card",
+        "description": "Sends card details to the payment provider and returns a reusable token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TokenizeCardRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Card tokenized successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenResponse" } } }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "502": {
+            "description": "Tokenization failed at payment provider",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/merchant/config": {
+      "get": {
+        "tags": ["Merchant"],
+        "summary": "Get merchant acceptance token and available payment methods",
+        "description": "Retrieves the merchant acceptance token, presigned acceptance details, and list of enabled payment methods from the provider.",
+        "responses": {
+          "200": {
+            "description": "Merchant configuration retrieved",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MerchantConfig" } } }
+          },
+          "500": {
+            "description": "Payment provider unreachable",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/pse/financial-institutions": {
+      "get": {
+        "tags": ["PSE"],
+        "summary": "List available PSE financial institutions",
+        "description": "Returns the list of banks available for PSE payments. Public — no API key required.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "List of financial institutions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PseInstitution" }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Payment provider unreachable",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/webhooks/payment-provider": {
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "Receive payment provider event notifications",
+        "description": "Validates the event checksum (SHA-256), looks up the transaction by provider ID, and updates its status. Public — no API key required, but checksum is verified.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "x-event-checksum",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "SHA-256 checksum provided by the payment provider"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WebhookPayload" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Event processed, transaction updated",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Transaction" } } }
+          },
+          "400": {
+            "description": "Invalid payload structure",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "401": {
+            "description": "Checksum validation failed",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    }
+  }
+}
