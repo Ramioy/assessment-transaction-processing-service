@@ -1,0 +1,33 @@
+name: txn-processing-prod
+services:
+  app:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    container_name: txn-processing-app-prod
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "${PORT:-3002}:${PORT:-3002}"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:${PORT:-3002}${API_PREFIX:-/api}/${NODE_ENV:-production}/${API_VERSION:-v1}/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - txn-processing-production
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+networks:
+  txn-processing-production:
+    name: txn-processing-production

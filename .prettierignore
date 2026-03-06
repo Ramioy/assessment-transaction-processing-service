@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+dist/
+build/
+
+# Build artifacts
+*.tsbuildinfo
+coverage/
+
+# Environment
+.env
+.env.local
+.env.*.local
+environment/**/.env
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+LICENSE
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Test artifacts
+.nyc_output/
+jest.config.js
+
+# Misc
+.prettierrc
+.eslintrc*
+eslint.config.mjs
+tsconfig*.json
+nest-cli.json

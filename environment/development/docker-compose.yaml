@@ -1,0 +1,18 @@
+name: txn-processing-dev
+services:
+  app:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    container_name: txn-processing-app-dev
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${PORT:-3002}:${PORT:-3002}"
+    networks:
+      - txn-processing-development
+
+networks:
+  txn-processing-development:
+    name: txn-processing-development

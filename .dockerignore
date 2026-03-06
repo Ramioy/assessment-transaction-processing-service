@@ -1,0 +1,70 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build artifacts
+dist
+build
+*.tsbuildinfo
+
+# Test files
+test
+.test
+coverage
+.nyc_output
+jest.config.js
+
+# Development
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+environment/development/.env
+environment/production/.env
+
+# IDE and editor
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+*.log
+
+# Documentation
+README.md
+doc
+docs
+CHANGELOG.md
+LICENSE
+
+# Configuration files (not needed in container)
+.eslintrc.js
+.prettierrc
+eslint.config.mjs
+jest.config.js
+
+# Docker and CI/CD
+Dockerfile
+docker-compose.yml
+.dockerignore
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Scripts
+script
+
+# Optional
+*.md
+.editorconfig
